@@ -1,5 +1,8 @@
 package com.hairdresser.gui;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -8,10 +11,13 @@ import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.layout.VBox;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -197,38 +203,249 @@ public class DialogFactory {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
+        grid.setPadding(new Insets(10));
 
-        TextField visitorIdField = new TextField();
-        TextField serviceTypeIdField = new TextField();
-        TextField userIdField = new TextField();
-        TextField shiftIdField = new TextField();
-        TextField visitDateField = new TextField();
+        // ComboBox для посетителей
+        ComboBox<VisitorModel> visitorComboBox = new ComboBox<>();
+        visitorComboBox.setPromptText("Выберите посетителя");
+        visitorComboBox.setPrefWidth(200);
 
-        grid.add(new Label("ID посетителя:"), 0, 0);
-        grid.add(visitorIdField, 1, 0);
-        grid.add(new Label("ID услуги:"), 0, 1);
-        grid.add(serviceTypeIdField, 1, 1);
-        grid.add(new Label("ID мастера:"), 0, 2);
-        grid.add(userIdField, 1, 2);
-        grid.add(new Label("ID смены:"), 0, 3);
-        grid.add(shiftIdField, 1, 3);
-        grid.add(new Label("Дата (YYYY-MM-DD):"), 0, 4);
-        grid.add(visitDateField, 1, 4);
+        // ComboBox для услуг
+        ComboBox<ServiceTypeModel> serviceComboBox = new ComboBox<>();
+        serviceComboBox.setPromptText("Выберите услугу");
+        serviceComboBox.setPrefWidth(200);
+
+        // ComboBox для мастеров
+        ComboBox<UserModel> masterComboBox = new ComboBox<>();
+        masterComboBox.setPromptText("Выберите мастера");
+        masterComboBox.setPrefWidth(200);
+
+        // ComboBox для смен
+        ComboBox<ShiftModel> shiftComboBox = new ComboBox<>();
+        shiftComboBox.setPromptText("Выберите смену");
+        shiftComboBox.setPrefWidth(200);
+
+        // DatePicker для даты
+        DatePicker datePicker = new DatePicker();
+        datePicker.setPromptText("Выберите дату");
+        datePicker.setPrefWidth(200);
+
+        // Загрузка данных для ComboBox
+        try {
+            // Посетители
+            String visitorJson = ApiClient.getInstance().get("visitors");
+            JSONArray visitorArray = new JSONArray(visitorJson);
+            ObservableList<VisitorModel> visitors = FXCollections.observableArrayList();
+            for (int i = 0; i < visitorArray.length(); i++) {
+                JSONObject obj = visitorArray.getJSONObject(i);
+                visitors.add(new VisitorModel(
+                        obj.getInt("visitor_id"),
+                        obj.getString("full_name"),
+                        obj.getString("phone_number")
+                ));
+            }
+            visitorComboBox.setItems(visitors);
+
+            // Услуги
+            String serviceJson = ApiClient.getInstance().get("serviceTypes");
+            JSONArray serviceArray = new JSONArray(serviceJson);
+            ObservableList<ServiceTypeModel> services = FXCollections.observableArrayList();
+            for (int i = 0; i < serviceArray.length(); i++) {
+                JSONObject obj = serviceArray.getJSONObject(i);
+                services.add(new ServiceTypeModel(
+                        obj.getInt("service_type_id"),
+                        obj.getString("service_name")
+                ));
+            }
+            serviceComboBox.setItems(services);
+
+            String userJson = ApiClient.getInstance().get("users");
+            JSONArray userArray = new JSONArray(userJson);
+            ObservableList<UserModel> masters = FXCollections.observableArrayList();
+            for (int i = 0; i < userArray.length(); i++) {
+                JSONObject obj = userArray.getJSONObject(i);
+                if (obj.getInt("role_id") == 2) {
+                    masters.add(new UserModel(
+                            obj.getInt("user_id"),
+                            obj.getString("username"),
+                            obj.getString("password"),
+                            obj.getInt("role_id"),
+                            obj.getString("role_name")
+                    ));
+                }
+            }
+            masterComboBox.setItems(masters);
+
+            // Смены
+            String shiftJson = ApiClient.getInstance().get("shifts");
+            JSONArray shiftArray = new JSONArray(shiftJson);
+            ObservableList<ShiftModel> shifts = FXCollections.observableArrayList();
+            for (int i = 0; i < shiftArray.length(); i++) {
+                JSONObject obj = shiftArray.getJSONObject(i);
+                shifts.add(new ShiftModel(
+                        obj.getInt("shift_id"),
+                        obj.getString("shift_hours")
+                ));
+            }
+            shiftComboBox.setItems(shifts);
+        } catch (IOException | InterruptedException e) {
+            showError("Ошибка загрузки данных: " + e.getMessage());
+        }
+
+        // Настройка отображения в ComboBox
+        visitorComboBox.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(VisitorModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getFullName());
+            }
+        });
+        visitorComboBox.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(VisitorModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getFullName());
+            }
+        });
+
+        serviceComboBox.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(ServiceTypeModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getServiceName());
+            }
+        });
+        serviceComboBox.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(ServiceTypeModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getServiceName());
+            }
+        });
+
+        masterComboBox.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(UserModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getUsername());
+            }
+        });
+        masterComboBox.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(UserModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getUsername());
+            }
+        });
+
+        shiftComboBox.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(ShiftModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getShiftHours());
+            }
+        });
+        shiftComboBox.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(ShiftModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getShiftHours());
+            }
+        });
+
+        // Размещение элементов в GridPane
+        grid.add(new Label("Посетитель:"), 0, 0);
+        grid.add(visitorComboBox, 1, 0);
+        grid.add(new Label("Услуга:"), 0, 1);
+        grid.add(serviceComboBox, 1, 1);
+        grid.add(new Label("Мастер:"), 0, 2);
+        grid.add(masterComboBox, 1, 2);
+        grid.add(new Label("Смена:"), 0, 3);
+        grid.add(shiftComboBox, 1, 3);
+        grid.add(new Label("Дата:"), 0, 4);
+        grid.add(datePicker, 1, 4);
 
         dialog.getDialogPane().setContent(grid);
+
+        // Валидация и отправка запроса
+        Button okButton = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+        okButton.setDisable(true);
+
+        // Валидация: активировать кнопку OK только если все поля заполнены
+        visitorComboBox.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+            okButton.setDisable(
+                    visitorComboBox.getSelectionModel().isEmpty() ||
+                            serviceComboBox.getSelectionModel().isEmpty() ||
+                            masterComboBox.getSelectionModel().isEmpty() ||
+                            shiftComboBox.getSelectionModel().isEmpty() ||
+                            datePicker.getValue() == null
+            );
+        });
+        serviceComboBox.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+            okButton.setDisable(
+                    visitorComboBox.getSelectionModel().isEmpty() ||
+                            serviceComboBox.getSelectionModel().isEmpty() ||
+                            masterComboBox.getSelectionModel().isEmpty() ||
+                            shiftComboBox.getSelectionModel().isEmpty() ||
+                            datePicker.getValue() == null
+            );
+        });
+        masterComboBox.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+            okButton.setDisable(
+                    visitorComboBox.getSelectionModel().isEmpty() ||
+                            serviceComboBox.getSelectionModel().isEmpty() ||
+                            masterComboBox.getSelectionModel().isEmpty() ||
+                            shiftComboBox.getSelectionModel().isEmpty() ||
+                            datePicker.getValue() == null
+            );
+        });
+        shiftComboBox.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+            okButton.setDisable(
+                    visitorComboBox.getSelectionModel().isEmpty() ||
+                            serviceComboBox.getSelectionModel().isEmpty() ||
+                            masterComboBox.getSelectionModel().isEmpty() ||
+                            shiftComboBox.getSelectionModel().isEmpty() ||
+                            datePicker.getValue() == null
+            );
+        });
+        datePicker.valueProperty().addListener((obs, old, newVal) -> {
+            okButton.setDisable(
+                    visitorComboBox.getSelectionModel().isEmpty() ||
+                            serviceComboBox.getSelectionModel().isEmpty() ||
+                            masterComboBox.getSelectionModel().isEmpty() ||
+                            shiftComboBox.getSelectionModel().isEmpty() ||
+                            datePicker.getValue() == null
+            );
+        });
 
         dialog.setResultConverter(button -> {
             if (button == ButtonType.OK) {
                 try {
+                    VisitorModel selectedVisitor = visitorComboBox.getSelectionModel().getSelectedItem();
+                    ServiceTypeModel selectedService = serviceComboBox.getSelectionModel().getSelectedItem();
+                    UserModel selectedMaster = masterComboBox.getSelectionModel().getSelectedItem();
+                    ShiftModel selectedShift = shiftComboBox.getSelectionModel().getSelectedItem();
+                    LocalDate selectedDate = datePicker.getValue();
+
+                    if (selectedVisitor == null || selectedService == null || selectedMaster == null ||
+                            selectedShift == null || selectedDate == null) {
+                        showError("Все поля должны быть заполнены!");
+                        return null;
+                    }
+
                     JSONObject json = new JSONObject();
-                    json.put("visitor_id", Integer.parseInt(visitorIdField.getText()));
-                    json.put("service_type_id", Integer.parseInt(serviceTypeIdField.getText()));
-                    json.put("user_id", Integer.parseInt(userIdField.getText()));
-                    json.put("shift_id", Integer.parseInt(shiftIdField.getText()));
-                    json.put("visit_date", visitDateField.getText());
+                    json.put("visitor_id", selectedVisitor.getVisitorId());
+                    json.put("service_type_id", selectedService.getServiceTypeId());
+                    json.put("user_id", selectedMaster.getUserId());
+                    json.put("shift_id", selectedShift.getShiftId());
+                    json.put("visit_date", selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+
+                    System.out.println(json);
+
                     ApiClient.getInstance().post("visits", json.toString());
-                } catch (IOException | InterruptedException | NumberFormatException e) {
-                    dialog.setHeaderText("Ошибка: " + e.getMessage());
+                } catch (IOException | InterruptedException e) {
+                    showError("Ошибка отправки данных: " + e.getMessage());
+                    System.out.println(e.getMessage());
                     return null;
                 }
             }
@@ -237,6 +454,7 @@ public class DialogFactory {
 
         return dialog;
     }
+
 
     private static Dialog<ButtonType> createFreeSlotsDialog() {
         Dialog<ButtonType> dialog = new Dialog<>();
@@ -268,58 +486,111 @@ public class DialogFactory {
         return dialog;
     }
 
+    private static void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Ошибка");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     private static Dialog<ButtonType> createMasterScheduleDialog() {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Расписание мастера");
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
 
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(10));
 
-        TextField userIdField = new TextField();
-        grid.add(new Label("ID мастера:"), 0, 0);
-        grid.add(userIdField, 1, 0);
+        // ComboBox для выбора мастера
+        ComboBox<UserModel> masterComboBox = new ComboBox<>();
+        masterComboBox.setPromptText("Выберите мастера");
+        masterComboBox.setPrefWidth(200);
 
-        TableView<ScheduleEntry> table = new TableView<>();
-        TableColumn<ScheduleEntry, String> dateCol = new TableColumn<>("Дата");
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("visitDate"));
-        TableColumn<ScheduleEntry, String> shiftCol = new TableColumn<>("Смена");
-        shiftCol.setCellValueFactory(new PropertyValueFactory<>("shiftHours"));
-        TableColumn<ScheduleEntry, String> visitorCol = new TableColumn<>("Клиент");
-        visitorCol.setCellValueFactory(new PropertyValueFactory<>("visitorName"));
-        TableColumn<ScheduleEntry, String> serviceCol = new TableColumn<>("Услуга");
-        serviceCol.setCellValueFactory(new PropertyValueFactory<>("serviceName"));
-        table.getColumns().addAll(dateCol, shiftCol, visitorCol, serviceCol);
-
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().setExpandableContent(table);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                try {
-                    String json = ApiClient.getInstance().get("reports/master-schedule?userId=" + userIdField.getText());
-                    JSONArray array = new JSONArray(json);
-                    List<ScheduleEntry> entries = new ArrayList<>();
-                    for (int i = 0; i < array.length(); i++) {
-                        JSONObject obj = array.getJSONObject(i);
-                        entries.add(new ScheduleEntry(
-                                obj.getString("visit_date"),
-                                obj.getString("shift_hours"),
-                                obj.getString("visitor_name"),
-                                obj.getString("service_name")
-                        ));
-                    }
-                    table.getItems().clear();
-                    table.getItems().addAll(entries);
-                } catch (IOException | InterruptedException e) {
-                    dialog.setHeaderText("Ошибка: " + e.getMessage());
-                    return null;
-                }
+        // Загрузка списка мастеров
+        ObservableList<UserModel> masters = FXCollections.observableArrayList();
+        try {
+            String json = ApiClient.getInstance().get("users");
+            JSONArray array = new JSONArray(json);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = array.getJSONObject(i);
+                masters.add(new UserModel(
+                        obj.getInt("user_id"),
+                        obj.getString("username"),
+                        obj.getString("password"),
+                        obj.getInt("role_id"),
+                        obj.getString("role_name")
+                ));
             }
-            return button;
+            masterComboBox.setItems(masters);
+        } catch (IOException | InterruptedException e) {
+            showError("Ошибка загрузки мастеров: " + e.getMessage());
+        }
+
+        // Настройка отображения имени мастера в ComboBox
+        masterComboBox.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(UserModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getUsername());
+            }
+        });
+        masterComboBox.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(UserModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getUsername());
+            }
         });
 
+        // Таблица для отображения расписания
+        TableView<VisitModel> table = new TableView<>();
+        TableColumn<VisitModel, Integer> visitIdCol = new TableColumn<>("ID визита");
+        visitIdCol.setCellValueFactory(new PropertyValueFactory<>("visitId"));
+        TableColumn<VisitModel, String> visitorCol = new TableColumn<>("Клиент");
+        visitorCol.setCellValueFactory(new PropertyValueFactory<>("visitorName"));
+        TableColumn<VisitModel, String> serviceCol = new TableColumn<>("Услуга");
+        serviceCol.setCellValueFactory(new PropertyValueFactory<>("serviceName"));
+        TableColumn<VisitModel, String> shiftCol = new TableColumn<>("Смена");
+        shiftCol.setCellValueFactory(new PropertyValueFactory<>("shiftHours"));
+        TableColumn<VisitModel, String> dateCol = new TableColumn<>("Дата");
+        dateCol.setCellValueFactory(new PropertyValueFactory<>("visitDate"));
+        table.getColumns().addAll(visitIdCol, visitorCol, serviceCol, shiftCol, dateCol);
+
+        // Обработчик выбора мастера
+        masterComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue != null) {
+                try {
+                    String json = ApiClient.getInstance().get("visits?user_id=" + newValue.getUserId());
+                    System.out.println(newValue);
+                    JSONArray array = new JSONArray(json);
+                    ObservableList<VisitModel> visits = FXCollections.observableArrayList();
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject obj = array.getJSONObject(i);
+                        visits.add(new VisitModel(
+                                obj.getInt("visit_id"),
+                                obj.getInt("visitor_id"),
+                                obj.getString("visitor_name"),
+                                obj.getInt("service_type_id"),
+                                obj.getString("service_name"),
+                                obj.getInt("user_id"),
+                                obj.getString("master_name"),
+                                obj.getInt("shift_id"),
+                                obj.getString("shift_hours"),
+                                obj.getString("visit_date")
+                        ));
+                    }
+                    table.setItems(visits);
+                } catch (IOException | InterruptedException e) {
+                    showError("Ошибка загрузки расписания: " + e.getMessage());
+                }
+            } else {
+                table.setItems(FXCollections.observableArrayList());
+            }
+        });
+
+        vbox.getChildren().addAll(new Label("Мастер:"), masterComboBox, table);
+        dialog.getDialogPane().setContent(vbox);
         return dialog;
     }
 
@@ -600,6 +871,7 @@ public class DialogFactory {
             this.salaryPercentage = salaryPercentage;
             this.salary = salary;
         }
+
 
         public int getUserId() { return userId; }
         public String getUsername() { return username; }
