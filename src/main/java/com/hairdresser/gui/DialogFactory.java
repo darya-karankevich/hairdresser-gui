@@ -1,13 +1,9 @@
 package com.hairdresser.gui;
 
-import javafx.scene.control.Dialog;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
@@ -437,15 +433,15 @@ public class DialogFactory {
 
     private static Dialog<ButtonType> createClientsByTimeChartDialog() {
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Диаграмма количества клиентов по времени");
+        dialog.setTitle("Диаграмма количества клиентов по сменам");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
-        xAxis.setLabel("Дата");
+        xAxis.setLabel("Смена");
         yAxis.setLabel("Количество клиентов");
-        chart.setTitle("Клиенты по времени");
+        chart.setTitle("Клиенты по сменам");
 
         try {
             String json = ApiClient.getInstance().get("reports/clients-by-time");
@@ -453,7 +449,7 @@ public class DialogFactory {
             XYChart.Series<String, Number> series = new XYChart.Series<>();
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
-                series.getData().add(new XYChart.Data<>(obj.getString("visit_date"), obj.getInt("client_count")));
+                series.getData().add(new XYChart.Data<>(obj.getString("shift_hours"), obj.getInt("client_count")));
             }
             chart.getData().add(series);
         } catch (IOException | InterruptedException e) {

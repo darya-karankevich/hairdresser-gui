@@ -1,32 +1,30 @@
 package com.hairdresser.gui;
 
-import org.json.JSONObject;
-
-public class ServiceTypeModel extends EntityModel {
-    private static final long serialVersionUID = 1L;
-    private int serviceTypeId;
-    private String serviceName;
+public class ServiceTypeModel {
+    private final int serviceTypeId;
+    private final String serviceName;
+    private double price;
 
     public ServiceTypeModel(int serviceTypeId, String serviceName) {
         this.serviceTypeId = serviceTypeId;
         this.serviceName = serviceName;
+
+    }
+    public ServiceTypeModel(int serviceTypeId, String serviceName, double price) {
+        this.serviceTypeId = serviceTypeId;
+        this.serviceName = serviceName;
+        this.price = price;
     }
 
-    public int getServiceTypeId() { return serviceTypeId; }
-    public void setServiceTypeId(int serviceTypeId) { this.serviceTypeId = serviceTypeId; }
-    public String getServiceName() { return serviceName; }
-    public void setServiceName(String serviceName) { this.serviceName = serviceName; }
-
-    @Override
-    public String toJson() {
-        JSONObject json = new JSONObject();
-        json.put("service_type_id", serviceTypeId);
-        json.put("service_name", serviceName);
-        return json.toString();
+    public int getServiceTypeId() {
+        return serviceTypeId;
     }
 
-    @Override
-    public String toString() {
-        return "ServiceTypeModel{serviceTypeId=" + serviceTypeId + ", serviceName='" + serviceName + "'}";
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public double getPrice() {
+        return price;
     }
 }
