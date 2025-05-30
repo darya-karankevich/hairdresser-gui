@@ -126,5 +126,10 @@ public class MainController {
     }
 
     public void showAbout(ActionEvent actionEvent) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("О программе");
+        alert.setHeaderText(null);
+        alert.setContentText("Парикмахерская\nВерсия 1.0\nРазработано для курсового проекта\nРазрабочик: Каранкевич Дарья");
+        alert.showAndWait();
     }
 }

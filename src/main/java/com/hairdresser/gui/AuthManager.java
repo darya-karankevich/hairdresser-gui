@@ -115,7 +115,7 @@ public class AuthManager {
         ComboBox<String> roleComboBox = new ComboBox<>();
         roleComboBox.getItems().addAll("мастер", "администратор");
         roleComboBox.setPromptText("Выберите роль");
-        roleComboBox.setValue("Мастер");
+        roleComboBox.setValue("мастер");
 
         Button registerButton = new Button("Зарегистрироваться");
         registerButton.setDefaultButton(true);
